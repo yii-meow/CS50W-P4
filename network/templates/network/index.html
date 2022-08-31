@@ -172,7 +172,6 @@
         function Post({post}) {
             const [content, setContent] = useState(null);
             const [postNum, setPostNum] = useState(null);
-            const [likes, setLikes] = useState(null);
             const [likeId, setLikeId] = useState(null);
             const [likeStatus, setLikeStatus] = useState(null);
             const [initialLike, setInitialLike] = useState(true);
@@ -220,7 +219,6 @@
                 setLikeId(itemId)
                 setInitialLike(false)
                 const current_likes = parseInt(document.getElementById(`like_count${itemId}`).innerHTML);
-                console.log(current_likes);
 
                 if (likeStatus) {
                     document.getElementById(`like_count${itemId}`).innerHTML = current_likes + 1;
@@ -237,9 +235,6 @@
                         like_status: likeStatus
                     })
                 })
-                    .then(result => {
-
-                    })
                     .catch(err => {
                         console.log(err)
                     })
@@ -306,23 +301,11 @@
 
                                                 <div className="like d-flex align-items-baseline">
                                                     <button className="btn text-white">
-
-                                                        {
-                                                            {# First load of Page #}
-                                                            initialLike ?
-                                                                item.liked_by.includes(parseInt(user_id)) ?
-                                                                    {# Unlike #}
-                                                                    <i class="bi bi-heart-fill"
-                                                                       onClick={() => likePost(item.id, false)}></i>
-                                                                    :
-                                                                    {# Like #}
-                                                                    <i className="bi bi-heart"
-                                                                       onClick={() => likePost(item.id, true)}></i>
-
-                                                                :
-                                                                (
-
-                                                                    parseInt(document.getElementById(`like_count${item.id}`).innerHTML) >= item.likes ?
+                                                        {% if user.is_authenticated %}
+                                                            {
+                                                                {# First load of Page #}
+                                                                initialLike ?
+                                                                    item.liked_by.includes(parseInt(user_id)) ?
                                                                         {# Unlike #}
                                                                         <i class="bi bi-heart-fill"
                                                                            onClick={() => likePost(item.id, false)}></i>
@@ -331,17 +314,40 @@
                                                                         <i className="bi bi-heart"
                                                                            onClick={() => likePost(item.id, true)}></i>
 
-                                                                )
+                                                                    :
+                                                                    (
+                                                                        parseInt(document.getElementById(`like_count${item.id}`).innerHTML) > item.likes ?
+                                                                            {# Unlike #}
+                                                                            <i class="bi bi-heart-fill"
+                                                                               onClick={() => likePost(item.id, false)}></i>
+                                                                            :
+                                                                            {# Like #}
+                                                                            parseInt(document.getElementById(`like_count${item.id}`).innerHTML) == item.likes ?
 
-                                                        }
+                                                                                item.liked_by.includes(parseInt(user_id)) ?
+                                                                                    {# Unlike #}
+                                                                                    <i class="bi bi-heart-fill"
+                                                                                       onClick={() => likePost(item.id, false)}></i>
+                                                                                    :
+                                                                                    {# Like #}
+                                                                                    <i className="bi bi-heart"
+                                                                                       onClick={() => likePost(item.id, true)}></i>
 
+                                                                                :
+                                                                                {# Like #}
+                                                                                <i className="bi bi-heart"
+                                                                                   onClick={() => likePost(item.id, true)}></i>
+                                                                    )
 
+                                                            }
+                                                        {% else %}
+                                                            <i className="bi bi-heart"></i>
+                                                        {% endif %}
                                                     </button>
 
                                                     <span id={`like_count${item.id}`}>
                                                         {
                                                             item.likes
-                                                            {#likes != null ? ((item.id === likeId) ? likes : item.likes) : item.likes#}
                                                         }
                                                     </span>
                                                 </div>
