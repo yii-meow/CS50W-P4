@@ -172,8 +172,8 @@
         function Post({post}) {
             const [content, setContent] = useState(null);
             const [postNum, setPostNum] = useState(null);
-            const [likeId, setLikeId] = useState(null);
             const [likeStatus, setLikeStatus] = useState(null);
+            const [likeId, setLikeId] = useState(null);
             const [initialLike, setInitialLike] = useState(true);
 
             {# Enable post owner to edit post and highlighting the text field #}
@@ -303,7 +303,7 @@
                                                     <button className="btn text-white">
                                                         {% if user.is_authenticated %}
                                                             {
-                                                                {# First load of Page #}
+                                                                {# First load of Page (show data from database) #}
                                                                 initialLike ?
                                                                     item.liked_by.includes(parseInt(user_id)) ?
                                                                         {# Unlike #}
@@ -341,7 +341,11 @@
 
                                                             }
                                                         {% else %}
-                                                            <i className="bi bi-heart"></i>
+                                                            <i className="bi bi-heart"
+                                                               onClick={() => {
+                                                                   alert("Login to like post!")
+                                                               }}>
+                                                            </i>
                                                         {% endif %}
                                                     </button>
 
@@ -402,8 +406,15 @@
 
         // Fetch a user profile
         function Profile() {
+            // Convert Django To React
+            {% if user.is_authenticated %}
+                var user_id = "{{ request.user.id }}"
+            {% endif %}
+
             const [profile, setProfile] = useState([]);
             const [followingNumbers, setFollowingNumbers] = useState(0);
+            const [followers, setFollowers] = useState(null);
+            const [following, setFollowing] = useState(null);
             let {accountId} = useParams();
 
             useEffect(() => {
@@ -412,13 +423,30 @@
                     .then(data => {
                         setProfile(data);
                         setFollowingNumbers(data.account.following.length);
+                        setFollowers(data.account.followers_count);
+                        setFollowing(data.follow_status)
                     })
             }, [])
 
-            // Convert Django To React
-            {% if user.is_authenticated %}
-                var user_id = "{{ request.user.id }}"
-            {% endif %}
+            function followOrUnfollow(accountId, followStatus) {
+                fetch("/followOrUnfollowUser", {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        user: accountId,
+                        followStatus: followStatus
+                    })
+                }).then(data => {
+                    setFollowing(!following);
+                    if (followStatus) {
+                        setFollowers(followers + 1);
+                    } else {
+                        setFollowers(followers - 1);
+                    }
+                }).catch(err => {
+                    console.log(err);
+                })
+
+            }
 
             return (
                 <div className="user_posts">
@@ -440,7 +468,8 @@
                                 <div>
                                     <Link to={`/profile/${profile.account && profile.account.id}/following`}
                                           className="following"><b>{followingNumbers}  </b> Following</Link>
-                                    <span className="ml-2"> <b>{profile.account && profile.account.followers_count} </b> Followers </span>
+                                    <span
+                                        className="ml-2"> <b>{followers && followers} </b> Followers </span>
                                 </div>
 
                                 {# Show 'follow' button for logged in user #}
@@ -450,12 +479,14 @@
                                         user_id == (profile.account && profile.account.id) ? "" :
                                             <div>
                                                 {
-                                                    profile.follow_status ?
+                                                    following ?
                                                         {# Unfollow button if following #}
-                                                        <button className="mr-2 p-2 btn btn-primary">Unfollow</button> :
+                                                        <button className="mr-2 p-2 btn btn-primary"
+                                                                onClick={() => followOrUnfollow(profile.account.id, false)}>Unfollow</button> :
 
                                                         {# Follow button if not following #}
-                                                        <button className="mr-2 p-2 btn btn-primary">Follow</button>
+                                                        <button className="mr-2 p-2 btn btn-primary"
+                                                                onClick={() => followOrUnfollow(profile.account.id, true)}>Follow</button>
                                                 }
                                             </div>
                                     }

@@ -177,6 +177,52 @@ def profile_view(request, account_id):
         return JsonResponse(context)
 
 
+@csrf_exempt
+@login_required()
+def follow_or_unfollow_user(request):
+    if request.method != "PUT":
+        return JsonResponse({
+            "Error": "Follow A user must be a put method"
+        }, status=400)
+
+    logging.basicConfig(level=logging.INFO)  # Here
+
+    data = json.loads(request.body)
+
+    # Check is data valid
+    if data.get("user") is None or data.get("followStatus") is None:
+        return JsonResponse({
+            "Error": "Insufficient Information for follow/unfollow a user."
+        }, status=400)
+
+    # Check if this user exists
+    try:
+        target_user = User.objects.get(pk=data["user"])
+
+    except User.DoesNotExist:
+        return JsonResponse({
+            "Error": "The target user does not exists."
+        }, status=400)
+
+    logging.info(target_user)
+
+    # If follow the target user
+    if data["followStatus"]:
+        # Add user to the target user's followers list
+        new_follow = Follow(
+            followee=target_user,
+            follower=User.objects.get(pk=request.user.id)
+        )
+        new_follow.save()
+
+    else:
+        # Remove user from the followers list
+        remove_follow = Follow.objects.filter(followee=target_user, follower=User.objects.get(pk=request.user.id))
+        remove_follow.delete()
+
+    return HttpResponse(status=204)
+
+
 def following(request, account_id):
     """Show people who are being followed"""
 

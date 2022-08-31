@@ -16,6 +16,7 @@ urlpatterns = [
     path("followeePost/", views.index, name="followeePost"),
     path("pagination", views.index, name="pagination"),
     path("likePost", views.like_post, name="likePost"),
+    path("followOrUnfollowUser", views.follow_or_unfollow_user, name="followOrUnfollow"),
 
     # API
     path("profileView/<int:account_id>", views.profile_view, name="profileView"),
