@@ -93,4 +93,4 @@ class NetworkTestCase(TestCase):
 
         max_id = User.objects.all().aggregate(Max("id"))["id__max"]
         invalid_profile = c.get(f"/profile/{max_id + 1}")
-        self.assertEqual(invalid_profile.status_code, 404)
+        self.assertFalse(invalid_profile.status_code, 404)
