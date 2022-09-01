@@ -67,6 +67,7 @@
             }
 
             {# Update State each time textfield change #}
+
             function updateContent(event) {
                 setContent(event.target.value);
             }
@@ -98,13 +99,14 @@
             const [likeStatus, setLikeStatus] = useState(null);
             const [likeId, setLikeId] = useState(null);
             const [initialLike, setInitialLike] = useState(true);
+            const [editStyle, setEditStyle] = useState(false)
 
             {# Enable post owner to edit post and highlighting the text field #}
 
             function enableEdit(index) {
                 document.getElementById(`content${index}`).readOnly = false;
                 document.getElementById(`content${index}`).style.border = "1px solid white";
-                document.getElementById("edit_button").style.display = "block";
+                setEditStyle(true)
             }
 
             function editContent(event, index) {
@@ -114,31 +116,29 @@
 
             function updatePost(event, itemId) {
                 {# On Click or Enter #}
-                if (event.key === "Enter" || event.key == null) {
-                    fetch("/posting", {
-                        method: "PUT",
-                        body: JSON.stringify({
-                            post_id: itemId,
-                            post_content: content
-                        })
+                fetch("/posting", {
+                    method: "PUT",
+                    body: JSON.stringify({
+                        post_id: itemId,
+                        post_content: content
                     })
-                        .then(result => {
-                            document.getElementById(`content${postNum}`).readOnly = true;
-                            document.getElementById(`content${postNum}`).style.border = "none";
-                            document.getElementById("edit_button").style.display = "none";
-                            if (!result.ok) {
-                                alert("You are not able to change the content");
-                            }
-                        })
-                        .catch(err => {
-                            console.log("Error: " + err);
-                        })
-                }
+                })
+                    .then(result => {
+                        document.getElementById(`content${postNum}`).readOnly = true;
+                        document.getElementById(`content${postNum}`).style.border = "none";
+                        setEditStyle(false)
+                        if (!result.ok) {
+                            alert("You are not able to change the content");
+                        }
+                    })
+                    .catch(err => {
+                        console.log("Error: " + err);
+                    })
             }
 
             {# Like Post Event #}
 
-            function likePost(itemId, likeStatus) {
+            function likeOrUnlikePost(itemId, likeStatus) {
                 setLikeId(itemId)
                 setInitialLike(false)
                 const current_likes = parseInt(document.getElementById(`like_count${itemId}`).innerHTML);
@@ -227,8 +227,6 @@
                                                         : item.content}
                                                     readOnly id={`content${index}`} className="content"
                                                     onChange={() => editContent(event, index)}
-                                                        {# Update Post via Enter #}
-                                                    onKeyUp={() => updatePost(event, item.id)}
                                                 />
                                             </div>
                                         </div>
@@ -246,18 +244,18 @@
                                                                     item.liked_by.includes(parseInt(user_id)) ?
                                                                         {# Unlike #}
                                                                         <i class="bi bi-heart-fill"
-                                                                           onClick={() => likePost(item.id, false)}></i>
+                                                                           onClick={() => likeOrUnlikePost(item.id, false)}></i>
                                                                         :
                                                                         {# Like #}
                                                                         <i className="bi bi-heart"
-                                                                           onClick={() => likePost(item.id, true)}></i>
+                                                                           onClick={() => likeOrUnlikePost(item.id, true)}></i>
 
                                                                     :
                                                                     (
                                                                         parseInt(document.getElementById(`like_count${item.id}`).innerHTML) > item.likes ?
                                                                             {# Unlike #}
                                                                             <i class="bi bi-heart-fill"
-                                                                               onClick={() => likePost(item.id, false)}></i>
+                                                                               onClick={() => likeOrUnlikePost(item.id, false)}></i>
                                                                             :
                                                                             {# Like #}
                                                                             parseInt(document.getElementById(`like_count${item.id}`).innerHTML) == item.likes ?
@@ -265,16 +263,16 @@
                                                                                 item.liked_by.includes(parseInt(user_id)) ?
                                                                                     {# Unlike #}
                                                                                     <i class="bi bi-heart-fill"
-                                                                                       onClick={() => likePost(item.id, false)}></i>
+                                                                                       onClick={() => likeOrUnlikePost(item.id, false)}></i>
                                                                                     :
                                                                                     {# Like #}
                                                                                     <i className="bi bi-heart"
-                                                                                       onClick={() => likePost(item.id, true)}></i>
+                                                                                       onClick={() => likeOrUnlikePost(item.id, true)}></i>
 
                                                                                 :
                                                                                 {# Like #}
                                                                                 <i className="bi bi-heart"
-                                                                                   onClick={() => likePost(item.id, true)}></i>
+                                                                                   onClick={() => likeOrUnlikePost(item.id, true)}></i>
                                                                     )
 
                                                             }
@@ -296,7 +294,7 @@
 
                                                 <div className="done_editing">
                                                     {# Update post via button #}
-                                                    {content && index == postNum &&
+                                                    {content && index == postNum && editStyle &&
                                                         <button className="btn btn-primary" id="edit_button"
                                                                 onClick={() => updatePost(event, item.id)}>
                                                             Done Editing
