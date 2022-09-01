@@ -17,8 +17,14 @@
         const Link = ReactRouterDOM.Link;
         const Route = ReactRouterDOM.Route;
         const useParams = ReactRouterDOM.useParams;
-        const {useState, useEffect} = React;
+        const {useState, useEffect, createContext, useContext} = React;
         const {useHistory} = ReactRouterDOM;
+
+        const StateContext = createContext();
+
+        {% if user.is_authenticated %}
+            var user_id = "{{ request.user.id }}"
+        {% endif %}
 
         var csrftoken = getCookie('csrftoken'); // Replace Django CSRF
 
@@ -98,8 +104,8 @@
             const [postNum, setPostNum] = useState(null);
             const [likeStatus, setLikeStatus] = useState(null);
             const [likeId, setLikeId] = useState(null);
-            const [initialLike, setInitialLike] = useState(true);
             const [editStyle, setEditStyle] = useState(false)
+            const [pageInitialLike, setPageInitialLike] = useContext(StateContext)
 
             {# Enable post owner to edit post and highlighting the text field #}
 
@@ -139,8 +145,8 @@
             {# Like Post Event #}
 
             function likeOrUnlikePost(itemId, likeStatus) {
-                setLikeId(itemId)
-                setInitialLike(false)
+                setLikeId(itemId);
+                setPageInitialLike(false);
                 const current_likes = parseInt(document.getElementById(`like_count${itemId}`).innerHTML);
 
                 if (likeStatus) {
@@ -162,11 +168,6 @@
                         console.log(err)
                     })
             }
-
-            {# Get id of loggied in user #}
-            {% if user.is_authenticated %}
-                var user_id = "{{ request.user.id }}"
-            {% endif %}
 
             return (
                 <div>
@@ -200,7 +201,7 @@
                                                         {# Only Post owner can edit #}
                                                         {% if user.is_authenticated %}
                                                             {
-                                                                (user_id == item.user.user_id) &&
+                                                                user_id == item.user.user_id &&
 
                                                                 <i class="bi bi-pencil-square ml-2"
                                                                    onClick={() => enableEdit(index)}>Edit</i>
@@ -240,7 +241,7 @@
                                                         {% if user.is_authenticated %}
                                                             {
                                                                 {# First load of Page (show data from database) #}
-                                                                initialLike ?
+                                                                pageInitialLike ?
                                                                     item.liked_by.includes(parseInt(user_id)) ?
                                                                         {# Unlike #}
                                                                         <i class="bi bi-heart-fill"
@@ -321,6 +322,7 @@
             // Here we use item offsets; we could also use page offsets
             // following the API or data you're working with.
             const [itemOffset, setItemOffset] = useState(0);
+            const [pageInitialLike, setPageInitialLike] = useState(true);
 
             const itemsPerPage = 10;
 
@@ -349,6 +351,7 @@
 
                 const newOffset = page * itemsPerPage % items.length;
                 setItemOffset(newOffset);
+                setPageInitialLike(true);
             };
 
             const onPage = {backgroundColor: "#2ce4f5"};
@@ -357,7 +360,11 @@
             return (
                 <div>
                     {# Render the posts #}
-                    {posts && currentItems && <Post post={currentItems}/>}
+                    {posts && currentItems &&
+                        <StateContext.Provider value={[pageInitialLike, setPageInitialLike]}>
+                            <Post post={currentItems}/>
+                        </StateContext.Provider>
+                    }
 
                     {# Show Pagination #}
                     <nav aria-label="Page navigation example">
@@ -421,16 +428,11 @@
 
         // Fetch a user profile
         function Profile() {
-            // Convert Django To React
-            {% if user.is_authenticated %}
-                var user_id = "{{ request.user.id }}"
-            {% endif %}
-
             const [profile, setProfile] = useState([]);
             const [followingNumbers, setFollowingNumbers] = useState(0);
             const [followers, setFollowers] = useState(null);
             const [following, setFollowing] = useState(null);
-            let {accountId} = useParams();
+            let {accountId} = useParams(); // parameter -> Eg: profile/2
 
             useEffect(() => {
                 axios.get(`/profileView/${accountId}`)
@@ -517,7 +519,7 @@
         // Display user who is being followed by this profile
         function Following() {
             const [following, setFollowing] = useState([]);
-            let {accountId} = useParams();
+            let {accountId} = useParams(); // parameter -> Eg: profile/2/following
 
             useEffect(() => {
                 axios.get(`/profileView/${accountId}/following`)

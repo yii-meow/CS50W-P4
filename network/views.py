@@ -142,8 +142,8 @@ def profile(request, account_id):
     try:
         User.objects.get(id=account_id)
     except User.DoesNotExist:
-        return HttpResponse({
-            "Error 404 Page Not Found"
+        return JsonResponse({
+            "error": "User does not exist, ID: " + str(account_id)
         }, status=404)
 
     return render(request, "network/index.html")
@@ -192,8 +192,6 @@ def follow_or_unfollow_user(request):
             "Error": "Follow A user must be a put method"
         }, status=400)
 
-    logging.basicConfig(level=logging.INFO)  # Here
-
     data = json.loads(request.body)
 
     # Check is data valid
@@ -210,8 +208,6 @@ def follow_or_unfollow_user(request):
         return JsonResponse({
             "Error": "The target user does not exists."
         }, status=400)
-
-    logging.info(target_user)
 
     # If follow the target user
     if data["followStatus"]:
@@ -232,8 +228,15 @@ def follow_or_unfollow_user(request):
 
 def following(request, account_id):
     """Show people who are being followed"""
+    # Check for this profile
+    try:
+        following = User.objects.get(pk=account_id)
 
-    following = User.objects.get(pk=account_id)
+    except User.DoesNotExist:
+        return JsonResponse({
+            "error": "User does not exist, ID: " + str(account_id)
+        }, status=404)
+
     return JsonResponse(following.serialize())
 
 
