@@ -15,6 +15,12 @@ class User(AbstractUser):
             "posts": [post.serialize() for post in self.posts.all().order_by("-timestamp")]
         }
 
+    def is_valid_followers_count(self):
+        return self.follower.count() >= 0
+
+    def is_valid_post_count(self):
+        return self.posts.count() >= 0
+
 
 class Follow(models.Model):
     # A person who is being followed
@@ -34,6 +40,9 @@ class Follow(models.Model):
              Followee: {self.followee.username},
              Follower: {self.follower.username}
         """
+
+    def is_valid_follow(self):
+        return self.followee.username != self.follower.username
 
 
 class Post(models.Model):
@@ -59,7 +68,11 @@ class Post(models.Model):
             '{self.content}' at {self.timestamp}
         """
 
+    def is_valid_user(self):
+        return len(User.objects.filter(pk=self.user.id)) != 0
 
-class Comment(models.Model):
-    post = models.ForeignKey("Post", on_delete=models.CASCADE, related_name="post_comments")
-    user = models.ForeignKey("User", on_delete=models.CASCADE, related_name="user_comments")
+    def is_valid_content(self):
+        return self.content not in ["", None]
+
+    def is_valid_likes_count(self):
+        return self.liked_by.count() >= 0

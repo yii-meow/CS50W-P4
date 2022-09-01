@@ -18,6 +18,7 @@
         const Route = ReactRouterDOM.Route;
         const useParams = ReactRouterDOM.useParams;
         const {useState, useEffect} = React;
+        const {useHistory} = ReactRouterDOM;
 
         var csrftoken = getCookie('csrftoken'); // Replace Django CSRF
 
@@ -77,7 +78,9 @@
                     <form id="post" method="POST" onSubmit={handleSubmit}>
                         <CSRFToken/>
                         <div className="d-flex mb-3">
-                            <img src="{% static 'pic/pp.jpg' %}" alt="pp" className="rounded-circle"/>
+                            <img
+                                src="https://www.kindpng.com/picc/m/171-1712282_profile-icon-png-profile-icon-vector-png-transparent.png"
+                                alt="pp" className="rounded-circle"/>
                             <textarea placeholder="What's happening?" name="sendPost" id="sendPost"
                                       className="ml-3" onChange={updateContent}/>
                         </div>
@@ -85,85 +88,6 @@
                             <button className="btn btn-primary" type="submit">Send</button>
                         </div>
                     </form>
-                </div>
-            );
-        }
-
-        function Pagination({posts}) {
-            // We start with an empty list of items.
-            const [items, setItems] = useState([]);
-
-            const [currentItems, setCurrentItems] = useState(null);
-            const [pageCount, setPageCount] = useState(0);
-            // Here we use item offsets; we could also use page offsets
-            // following the API or data you're working with.
-            const [itemOffset, setItemOffset] = useState(0);
-
-            const itemsPerPage = 10;
-
-            useEffect(() => {
-                const getPost = async () => {
-                    try {
-                        setItems(posts);
-                        // Fetch items from another resources.
-                        const endOffset = itemOffset + itemsPerPage;
-                        setCurrentItems(posts.slice(itemOffset, endOffset));
-                        setPageCount(Math.ceil(posts.length / itemsPerPage));
-                    } catch (err) {
-                        console.log(err);
-                    }
-                }
-                getPost();
-
-            }, [itemOffset, itemsPerPage, posts])
-
-            // Invoke when user click to request another page.
-            const handlePageClick = (page) => {
-                // Ignore 'Previous Page' at Page 1 and 'Next Page' at the last Page
-                if (page < 0 || page > pageCount - 1) {
-                    return;
-                }
-
-                const newOffset = page * itemsPerPage % items.length;
-                setItemOffset(newOffset);
-            };
-
-            const onPage = {backgroundColor: "#2ce4f5"};
-            const notOnPage = {backgroundColor: "white"};
-
-            return (
-                <div>
-                    {# Render the posts #}
-                    {posts && currentItems && <Post post={currentItems}/>}
-
-                    {# Show Pagination #}
-                    <nav aria-label="Page navigation example">
-                        <ul className="pagination justify-content-center mt-3">
-                            <li className="page-item">
-                                <a className="page-link bg-primary"
-                                   onClick={() => handlePageClick((itemOffset / 10) - 1)}>
-                                    Previous
-                                </a>
-                            </li>
-                            {
-                                [...Array(pageCount)].map((x, i) =>
-                                    <li className="page-item">
-                                        <a className="page-link" href="#"
-                                           style={i == (itemOffset) / 10 ? onPage : notOnPage}
-                                           onClick={() => handlePageClick(i)}>
-                                            {i + 1}
-                                        </a>
-                                    </li>
-                                )
-                            }
-                            <li className="page-item">
-                                <a className="page-link bg-primary"
-                                   onClick={() => handlePageClick((itemOffset / 10) + 1)}>
-                                    Next
-                                </a>
-                            </li>
-                        </ul>
-                    </nav>
                 </div>
             );
         }
@@ -256,9 +180,10 @@
                                             <div>
                                                 <Link to={`/profile/${item.user.user_id}`}
                                                       className="following">
-                                                    <img src="{% static 'pic/pp.jpg' %}"
-                                                         alt="pp" id="profile"
-                                                         className="rounded-circle"/>
+                                                    <img
+                                                        src="https://www.kindpng.com/picc/m/171-1712282_profile-icon-png-profile-icon-vector-png-transparent.png"
+                                                        alt="pp" id="profile"
+                                                        className="rounded-circle"/>
                                                 </Link>
                                             </div>
 
@@ -269,7 +194,9 @@
                                                         <h6>{item.user.username}</h6>
                                                     </Link>
                                                     <div>
-                                                        <span className="text-secondary">{item.timestamp}</span>
+                                                        {# Format Date #}
+                                                        <span
+                                                            className="text-secondary">{item.timestamp.slice(0, 19).replace("T", " ")}</span>
 
                                                         {# Only Post owner can edit #}
                                                         {% if user.is_authenticated %}
@@ -285,7 +212,20 @@
                                                 </div>
 
                                                 <textarea
-                                                    value={content || content == "" ? (postNum || postNum == 0 ? (index == postNum ? content : item.content) : item.content) : item.content}
+                                                    value={content || content == ""
+                                                        ?
+                                                        (
+                                                            postNum || postNum == 0
+                                                                ?
+                                                                (
+                                                                    index == postNum
+                                                                        ?
+                                                                        content
+                                                                        :
+                                                                        item.content
+                                                                ) : item.content
+                                                        )
+                                                        : item.content}
                                                     readOnly id={`content${index}`} className="content"
                                                     onChange={() => editContent(event, index)}
                                                         {# Update Post via Enter #}
@@ -297,7 +237,6 @@
                                         <div className="mt-3 d-flex justify-content-center">
 
                                             <div className="d-flex justify-content-between">
-
 
                                                 <div className="like d-flex align-items-baseline">
                                                     <button className="btn text-white">
@@ -376,6 +315,85 @@
             )
         }
 
+        function Pagination({posts}) {
+            // We start with an empty list of items.
+            const [items, setItems] = useState([]);
+
+            const [currentItems, setCurrentItems] = useState(null);
+            const [pageCount, setPageCount] = useState(0);
+            // Here we use item offsets; we could also use page offsets
+            // following the API or data you're working with.
+            const [itemOffset, setItemOffset] = useState(0);
+
+            const itemsPerPage = 10;
+
+            useEffect(() => {
+                const getPost = async () => {
+                    try {
+                        setItems(posts);
+                        // Fetch items from another resources.
+                        const endOffset = itemOffset + itemsPerPage;
+                        setCurrentItems(posts.slice(itemOffset, endOffset));
+                        setPageCount(Math.ceil(posts.length / itemsPerPage));
+                    } catch (err) {
+                        console.log(err);
+                    }
+                }
+                getPost();
+
+            }, [itemOffset, itemsPerPage, posts])
+
+            // Invoke when user click to request another page.
+            const handlePageClick = (page) => {
+                // Ignore 'Previous Page' at Page 1 and 'Next Page' at the last Page
+                if (page < 0 || page > pageCount - 1) {
+                    return;
+                }
+
+                const newOffset = page * itemsPerPage % items.length;
+                setItemOffset(newOffset);
+            };
+
+            const onPage = {backgroundColor: "#2ce4f5"};
+            const notOnPage = {backgroundColor: "white"};
+
+            return (
+                <div>
+                    {# Render the posts #}
+                    {posts && currentItems && <Post post={currentItems}/>}
+
+                    {# Show Pagination #}
+                    <nav aria-label="Page navigation example">
+                        <ul className="pagination justify-content-center mt-3">
+                            <li className="page-item">
+                                <a className="page-link bg-primary"
+                                   onClick={() => handlePageClick((itemOffset / 10) - 1)}>
+                                    Previous
+                                </a>
+                            </li>
+                            {
+                                [...Array(pageCount)].map((x, i) =>
+                                    <li className="page-item">
+                                        <a className="page-link" href="#"
+                                           style={i == (itemOffset) / 10 ? onPage : notOnPage}
+                                           onClick={() => handlePageClick(i)}>
+                                            {i + 1}
+                                        </a>
+                                    </li>
+                                )
+                            }
+                            <li className="page-item">
+                                <a className="page-link bg-primary"
+                                   onClick={() => handlePageClick((itemOffset / 10) + 1)}>
+                                    Next
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            );
+        }
+
         // Fetch All Posts
         function Posts() {
             const [post, setPosts] = useState([]);
@@ -445,7 +463,6 @@
                 }).catch(err => {
                     console.log(err);
                 })
-
             }
 
             return (
@@ -453,9 +470,6 @@
                     <div className="container profile pl-3 pt-2 pb-3 text-white">
                         <div>
                             <div className="d-flex">
-                                <a>
-                                    <i className="bi bi-arrow-left"></i>
-                                </a>
                                 <h4 id="username" className="ml-4"></h4>
                             </div>
                         </div>

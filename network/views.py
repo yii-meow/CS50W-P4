@@ -139,6 +139,13 @@ def all_post(request):
 
 
 def profile(request, account_id):
+    try:
+        User.objects.get(id=account_id)
+    except User.DoesNotExist:
+        return HttpResponse({
+            "Error 404 Page Not Found"
+        }, status=404)
+
     return render(request, "network/index.html")
 
 
